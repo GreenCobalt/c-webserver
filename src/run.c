@@ -7,7 +7,7 @@
 #include <string.h>
 #include <arpa/inet.h>
 
-void run(struct Server *server)
+void run(Server *server)
 {
     while (1)
     {
@@ -18,6 +18,7 @@ void run(struct Server *server)
 
         // acept and read from socket
         int conn_socket = accept(server->socket, sock_addr, &address_length);
+        printf("Connection received\n");
         read(conn_socket, req, 32768);
 
         // parse http request
@@ -51,7 +52,7 @@ int main()
 {
     // create server struct with port
     int port = 9000;
-    struct Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 255, run);
+    Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 255, run);
 
     // run funciton as defined in struct
     printf("Listening on port %d\n", port);

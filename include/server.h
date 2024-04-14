@@ -7,7 +7,8 @@
 typedef unsigned long u_long;
 
 // define server struct with necessary data types
-struct Server {
+typedef struct Server
+{
     int domain;
     int type;
     int protocol;
@@ -19,8 +20,8 @@ struct Server {
     int socket;
 
     void (*run)(struct Server *server);
-};
+} Server;
 
-struct Server server_constructor(int domain, int type, int protocol, u_long interface, int port, int backlog, void (*run)(struct Server *server));
+Server server_constructor(int domain, int type, int protocol, u_long interface, int port, int backlog, void (*run)(Server *server));
 
 #endif /* _SERVER_H */

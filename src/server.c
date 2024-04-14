@@ -6,10 +6,9 @@
 #include <string.h>
 
 // define server_constructor method that returns server_struct. sets variables and sets up server.address. then starts listening on port and address.
-struct Server server_constructor(int domain, int type, int protocol, u_long interface, int port, int backlog, void (*run)(struct Server *server))
+Server server_constructor(int domain, int type, int protocol, u_long interface, int port, int backlog, void (*run)(Server *server))
 {
-    
-    struct Server server;
+    Server server;
 
     server.domain = domain;
     server.type = type;
