@@ -37,17 +37,29 @@ char *strreplace(char *haystack, char *needle, char *new_needle)
     int addedchars = 0;
     while (last_strstr)
     {
-        addedchars = repcount * needle_len_diff;
+        // add replacement characters to new_haystack
         strncpy(&new_haystack[(last_strstr - haystack) + addedchars], new_needle, strlen(new_needle));
+
+        // add non-replaced characters between previous replacement location and this one to new_haystack
         strncpy(&new_haystack[last_replacement_end - haystack + addedchars], last_replacement_end, last_strstr - last_replacement_end);
 
         last_replacement_end = last_strstr + strlen(needle);
         last_strstr = strstr(last_replacement_end, needle);
+
         repcount++;
+        addedchars = repcount * needle_len_diff;
     }
+    // add non-replaced characters between last replacement and end of string to new_haystack
     strncpy(&new_haystack[last_replacement_end - haystack + (repcount * needle_len_diff)], last_replacement_end, strlen(haystack) - (last_replacement_end - haystack));
 
     if (new_haystack[new_haystack_size] != '\0')
         new_haystack[new_haystack_size] = '\0';
     return new_haystack;
 }
+
+/*
+#include <stdio.h>
+int main() {
+    printf("%s\n", strreplace("fdsfdsf", "f", "AA"));
+}
+*/

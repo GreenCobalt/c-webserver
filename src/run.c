@@ -26,6 +26,7 @@ void run(Server *server)
         char *REQLINE = strtok(requested, "\n");
         char *HEADERS = strtok(NULL, "|");
         char *REQBODY = strtok(NULL, "|");
+        free(requested);
 
         // get requesting socket ip
         struct sockaddr_in *pV4Addr = (struct sockaddr_in *)sock_addr;
@@ -45,6 +46,7 @@ void run(Server *server)
 
         // close socket
         close(conn_socket);
+        free(formatted_html);
     }
 }
 
