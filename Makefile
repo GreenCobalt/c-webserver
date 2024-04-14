@@ -16,7 +16,6 @@ obj/%.o: src/%.c $(DEPS)
 server: $(OBJS)
 	$(CC) -o server $(OBJS) -I.
 
-
 .PHONY: clean
 clean:
 	rm -f $(ODIR)/*.o server
