@@ -21,15 +21,16 @@ int strcount(char *haystack, char *needle)
     }
 }
 
-char *strreplace(char *haystack, char *needle, char *new_needle)
+char *strreplace(char *haystack, char *needle, char *new_needle, int free_old_haystack)
 {
     if (needle == "")
         return haystack;
 
     int needle_len_diff = strlen(new_needle) - strlen(needle);
-    long new_haystack_size = strlen(haystack) - (strcount(haystack, needle) * (-1 * needle_len_diff));
+    long new_haystack_size = strlen(haystack) - (strcount(haystack, needle) * (-1 * needle_len_diff)) + 1;
 
-    char *new_haystack = malloc(new_haystack_size * sizeof(char));
+    char *new_haystack = calloc(new_haystack_size, sizeof(char));
+
     char *last_strstr = strstr(haystack, needle);
     char *last_replacement_end = haystack;
 
@@ -37,10 +38,7 @@ char *strreplace(char *haystack, char *needle, char *new_needle)
     int addedchars = 0;
     while (last_strstr)
     {
-        // add replacement characters to new_haystack
         strncpy(&new_haystack[(last_strstr - haystack) + addedchars], new_needle, strlen(new_needle));
-
-        // add non-replaced characters between previous replacement location and this one to new_haystack
         strncpy(&new_haystack[last_replacement_end - haystack + addedchars], last_replacement_end, last_strstr - last_replacement_end);
 
         last_replacement_end = last_strstr + strlen(needle);
@@ -49,17 +47,23 @@ char *strreplace(char *haystack, char *needle, char *new_needle)
         repcount++;
         addedchars = repcount * needle_len_diff;
     }
-    // add non-replaced characters between last replacement and end of string to new_haystack
-    strncpy(&new_haystack[last_replacement_end - haystack + (repcount * needle_len_diff)], last_replacement_end, strlen(haystack) - (last_replacement_end - haystack));
+    strlcpy(&new_haystack[last_replacement_end - haystack + (repcount * needle_len_diff)], last_replacement_end, strlen(haystack) - (last_replacement_end - haystack) + 1);
 
-    if (new_haystack[new_haystack_size] != '\0')
-        new_haystack[new_haystack_size] = '\0';
+    if (new_haystack[new_haystack_size - 1] != '\0')
+        new_haystack[new_haystack_size - 1] = '\0';
+
+    if (free_old_haystack)
+        free(haystack);
+
     return new_haystack;
 }
 
 /*
 #include <stdio.h>
 int main() {
-    printf("%s\n", strreplace("fdsfdsf", "f", "AA"));
+    char *res = strreplace("GET HTTP/1.1\ndfsdf", "\n", "|");
+    for (int i = 0; i < strlen(res); i++) {
+        printf("%c", res[i]);
+    }
 }
 */
