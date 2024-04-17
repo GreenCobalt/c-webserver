@@ -1,6 +1,6 @@
 CC=gcc
 CFLAGS=-I.
-LDFLAGS=
+LDFLAGS=-lconfuse
 
 IDIR = include
 ODIR = obj

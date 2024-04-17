@@ -1,1 +1,2 @@
-find random segfault error (recently added file?)
+add other mime types (png gif etc)
+respond with 500 errors on request cancelled (?)

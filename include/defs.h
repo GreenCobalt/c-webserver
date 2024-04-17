@@ -39,6 +39,7 @@ typedef struct
     REQUEST_TYPE request_type;
     char *path;
     char *http_version;
+    int valid;
 } request_info;
 
 void free_request_info(request_info *info);

@@ -62,7 +62,10 @@ char *strafterlast(const char *haystack, const char *needle)
 {
     char *ptr = strrchr(haystack, *needle);
     if (ptr == NULL)
+    {
+        free(ptr);
         return strdup("");
+    }
     return ptr + 1;
 }
 

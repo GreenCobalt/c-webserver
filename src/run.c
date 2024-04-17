@@ -3,6 +3,8 @@
 #include "include/defs.h"
 #include "include/file.h"
 
+#include <confuse.h>
+
 #include <time.h>
 #include <signal.h>
 #include <stdio.h>
@@ -13,8 +15,7 @@
 
 const int MAX_REQ_SIZE = 32768;
 const int MAX_HEADER_RESP_SIZE = 256;
-const int port = 9000;
-const int debug = 0;
+cfg_bool_t debug = 0;
 
 const char *DAY[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 const char *MONTH[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -37,8 +38,9 @@ response_info generate_response(char *path)
     response.content.mime_type = file_name_to_mime_type(path);
     if (response.content.size == 0)
     {
+        free(response.content.content);
         response.http_code = 404;
-        response.content.mime_type = strdup("text/plain");
+        response.content.mime_type = "text/plain";
         response.content.content = strdup("404 Not Found");
         response.content.size = strlen(response.content.content);
     }
@@ -57,15 +59,29 @@ response_info generate_response(char *path)
 
 request_info parse_reqline(char *reqline)
 {
+    if (!reqline)
+    {
+        request_info result;
+        result.valid = 0;
+        return result;
+    }
+
+    if (debug)
+        printf("%s\n", reqline);
+
     char *edit = calloc(strlen(reqline) + 1, sizeof(char));
     if (debug)
         printf("%p\n", edit);
     strncpy(edit, reqline, strlen(reqline));
+
     request_info result;
+    result.valid = 1;
+
     if (debug)
         printf("%s\n", edit);
 
     result.request_type = string_to_request_type(strtok(edit, " "));
+
     if (debug)
         printf("%d\n", result.request_type);
 
@@ -91,17 +107,18 @@ request_info parse_reqline(char *reqline)
     return result;
 }
 
+char *req;
 void run(Server *server)
 {
     while (1)
     {
         // set variables and stuff
-        char *req = calloc(MAX_REQ_SIZE, sizeof(char));
         struct sockaddr *sock_addr = (struct sockaddr *)&server->address;
         socklen_t address_length = (socklen_t)sizeof(server->address);
 
         // accept and read from socket
         int conn_socket = accept(server->socket, sock_addr, &address_length);
+        req = calloc(MAX_REQ_SIZE, sizeof(char));
 
         clock_t start = clock();
 
@@ -111,13 +128,9 @@ void run(Server *server)
 
         if (!req)
         {
-            printf("req is null\n");
+            printf("REQUEST NULL\n");
             close(conn_socket);
             continue;
-        }
-        else
-        {
-            // printf("======\n%s\n======\n", req);
         }
 
         // get requesting socket ip
@@ -131,7 +144,8 @@ void run(Server *server)
         // parse http request
         if (debug)
             printf("parsing http request\n");
-        char *request_text = strreplace(strreplace(req, "\r\n", "\n", 1), "\n\n", "|", 1);
+
+        char *request_text = strreplace(strreplace(req, "\r\n", "\n", 1), "\n\n", "|", 1); /* THIS FREES req */
         char *REQLINE = strtok(request_text, "\n"), *HEADERS = strtok(NULL, "|"), *REQBODY = strtok(NULL, "|");
         if (REQBODY == NULL)
             REQBODY = "";
@@ -139,7 +153,15 @@ void run(Server *server)
         // parse "GET / HTTP/1.0" line into request_info struct
         if (debug)
             printf("parsing reqline\n");
+
         request_info request = parse_reqline(REQLINE);
+        if (!request.valid)
+        {
+            printf("REQUEST CANCELLED\n");
+            close(conn_socket);
+            free(request_text);
+            continue;
+        }
 
         printf("%s\t%s\t\t%s\n", ip_str, request_type_to_string(request.request_type), request.path);
 
@@ -182,8 +204,35 @@ void run(Server *server)
     }
 }
 
+cfg_t *cfg;
+void sigintHandle(int dummy)
+{
+    printf("\nCaught CTRL+C\n");
+
+    // free remaining pointers
+    cfg_free(cfg);
+
+    exit(0);
+}
+
 int main()
 {
+    signal(SIGINT, sigintHandle);
+
+    // initialize config
+    cfg_opt_t opts[] =
+        {
+            CFG_INT("port", 9000, CFGF_NONE),
+            CFG_BOOL("debug", cfg_false, CFGF_NONE),
+            CFG_END(),
+        };
+    cfg = cfg_init(opts, CFGF_NONE);
+    if (cfg_parse(cfg, "server.conf") == CFG_PARSE_ERROR)
+        return 1;
+
+    int port = cfg_getint(cfg, "port");
+    debug = cfg_getbool(cfg, "debug");
+
     // create server struct with port
     Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 255, run);
 

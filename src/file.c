@@ -5,8 +5,8 @@ file_content read_file(char *path)
     FILE *f = fopen(path, "r");
     if (f == NULL)
     {
-        char *string = calloc(1, sizeof(char));
-        string = 0;
+        char *string = malloc(sizeof(char));
+        *string = '\0';
 
         file_content r = {
             content : string,
