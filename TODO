@@ -1,3 +1,2 @@
-add http code texts (eg OK, Not Found for 200, 404 respectively)
 find random segfault error (recently added file?)
 find memory leak in parse_reqline

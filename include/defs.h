@@ -1,5 +1,5 @@
-#ifndef _DEFS_H
-#define _DEFS_H
+#ifndef DEFS_H_
+#define DEFS_H_
 
 #include <string.h>
 #include <stdlib.h>
@@ -59,4 +59,15 @@ typedef struct
 
 void free_response_info(response_info info);
 
-#endif /* _DEFS_H */
+const static struct
+{
+    const int code;
+    const char *message;
+} __HTTP_CODE_MESSAGES[] = {
+    {200, "OK"},
+    {404, "Not Found"},
+};
+
+const char *http_code_to_message(int code);
+
+#endif /* DEFS_H_ */

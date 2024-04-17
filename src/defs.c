@@ -48,3 +48,15 @@ void free_response_info(response_info info)
     free(info.content.content);
     free(info.date);
 }
+
+const char *http_code_to_message(int code)
+{
+    for (int i = 0; i < (sizeof(__HTTP_CODE_MESSAGES) / sizeof(__HTTP_CODE_MESSAGES[0])); i++)
+    {
+        if (code == __HTTP_CODE_MESSAGES[i].code)
+        {
+            return __HTTP_CODE_MESSAGES[i].message;
+        }
+    }
+    return "OK";
+}
