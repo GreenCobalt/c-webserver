@@ -1,7 +1,5 @@
 #include "include/defs.h"
-
-#include <string.h>
-#include <stdlib.h>
+#include "include/strfunc.h"
 
 REQUEST_TYPE string_to_request_type(const char *str)
 {
@@ -27,7 +25,26 @@ const char *request_type_to_string(REQUEST_TYPE type)
     return "UNDEFINED";
 }
 
-void free_request_info(request_info info) {
-    free(info.http_version);
-    free(info.path);
+const char *file_name_to_mime_type(const char *name)
+{
+    for (int i = 0; i < (sizeof(__FILE_MIME_TYPE) / sizeof(__FILE_MIME_TYPE[0])); i++)
+    {
+        if (strcmp(strafterlast(name, "."), __FILE_MIME_TYPE[i].file_ext) == 0)
+        {
+            return __FILE_MIME_TYPE[i].mime_type;
+        }
+    }
+    return "text/plain";
+}
+
+void free_request_info(request_info *info)
+{
+    free(info->http_version);
+    free(info->path);
+}
+
+void free_response_info(response_info info)
+{
+    free(info.content.content);
+    free(info.date);
 }

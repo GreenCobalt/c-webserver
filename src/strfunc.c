@@ -58,6 +58,13 @@ char *strreplace(char *haystack, char *needle, char *new_needle, int free_old_ha
     return new_haystack;
 }
 
+char *strafterlast(const char *haystack, const char *needle)
+{
+    char *ptr = strrchr(haystack, *needle);
+    if (ptr == NULL) return strdup("");
+    return ptr + 1;
+}
+
 /*
 #include <stdio.h>
 int main() {
