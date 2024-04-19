@@ -19,8 +19,9 @@
 #define DEBUG_PRINT(fmt, args...) /* Don't do anything in release builds */
 #endif
 
-const int MAX_REQ_SIZE = 32768;
-const int MAX_HEADER_RESP_SIZE = 256;
+int port;
+int max_request_content_size;
+int max_response_header_size;
 
 const char *DAY[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 const char *MONTH[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
@@ -50,8 +51,13 @@ response_info generate_response(char *path)
     response_info response = {};
     DEBUG_PRINT("reading file\n");
     response.content = read_file(path);
-    // response.content.mime_type = file_name_to_mime_type(path);
+    
+    clock_t start = clock();
     response.content.mime_type = magic_file(magic, path);
+    clock_t end = clock();
+    double elapsed = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
+    DEBUG_PRINT("(magic lookup took %fms)\n", elapsed);
+
     if (response.content.size == 0)
     {
         free(response.content.content);
@@ -118,7 +124,7 @@ void *handle_connection(void *vargp)
 
     DEBUG_PRINT("reading from socket\n");
 
-    char *req = calloc(MAX_REQ_SIZE, sizeof(char));
+    char *req = calloc(max_request_content_size, sizeof(char));
 
     if (read(conn_socket, req, 32768) < 0)
     {
@@ -144,8 +150,9 @@ void *handle_connection(void *vargp)
 
     // parse http request
     DEBUG_PRINT("parsing http request\n");
-
     char *request_text = strreplace(strreplace(req, "\r\n", "\n", 1), "\n\n", "|", 1); /* THIS FREES req */
+
+    DEBUG_PRINT("splitting http request\n");
     char *REQLINE = strtok(request_text, "\n"), *HEADERS = strtok(NULL, "|"), *REQBODY = strtok(NULL, "|");
     if (REQBODY == NULL)
         REQBODY = "";
@@ -173,7 +180,7 @@ void *handle_connection(void *vargp)
 
     // generate response http packet
     DEBUG_PRINT("generating response http\n");
-    int packet_response_size = MAX_HEADER_RESP_SIZE + strlen(response.date) + response.content.size;
+    int packet_response_size = max_response_header_size + strlen(response.date) + response.content.size;
     char *packet_response = calloc(packet_response_size, sizeof(char));
     snprintf(packet_response, packet_response_size, "HTTP/1.0 %d %s\r\nServer: snadol 0.1\r\nContent-Length: %ld\r\nContent-Type: %s\r\nDate: %s\r\n\r\n", response.http_code, http_code_to_message(response.http_code), response.content.size, response.content.mime_type, response.date);
 
@@ -252,7 +259,8 @@ int main()
     cfg_opt_t opts[] =
         {
             CFG_INT("port", 9000, CFGF_NONE),
-            CFG_BOOL("debug", cfg_false, CFGF_NONE),
+            CFG_INT("max_request_content_size", 32768, CFGF_NONE),
+            CFG_INT("max_response_header_size", 512, CFGF_NONE),
             CFG_END(),
         };
     cfg = cfg_init(opts, CFGF_NONE);
@@ -263,7 +271,9 @@ int main()
         return 1;
     magic_load(magic, NULL);
 
-    int port = cfg_getint(cfg, "port");
+    port = cfg_getint(cfg, "port");
+    max_request_content_size = cfg_getint(cfg, "max_request_content_size");
+    max_response_header_size = cfg_getint(cfg, "max_response_header_size");
 
     // create server struct with port
     Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 255, run);

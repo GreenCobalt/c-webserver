@@ -1,25 +1,25 @@
 #include "include/strfunc.h"
+#include <stdio.h>
 
 int strcount(char *haystack, char *needle)
 {
-    char *current_loc = haystack;
     int needle_len = strlen(needle);
     int count = 0;
 
     if (needle_len)
     {
-        while (current_loc)
+        char *str_str = strstr(haystack, needle);
+
+        // will not run once if str_str returns (nil) -> substring not found
+        while (str_str)
         {
-            current_loc = strstr(current_loc, needle);
-            current_loc += needle_len;
+            // substring was found at least once, increment count and search again
             count++;
+            str_str += needle_len;
+            str_str = strstr(str_str, needle);
         }
-        return count;
     }
-    else
-    {
-        return 0;
-    }
+    return count;
 }
 
 char *strreplace(char *haystack, char *needle, char *new_needle, int free_old_haystack)
@@ -69,13 +69,3 @@ char *strafterlast(const char *haystack, const char *needle)
     }
     return ptr + 1;
 }
-
-/*
-#include <stdio.h>
-int main() {
-    char *res = strreplace("GET HTTP/1.1\ndfsdf", "\n", "|");
-    for (int i = 0; i < strlen(res); i++) {
-        printf("%c", res[i]);
-    }
-}
-*/
