@@ -229,11 +229,13 @@ void run(Server *server)
         if (conn_socket < 0)
             printf("Error on accept\n");
 
+        // dispatch function to parse and repsond to request (TODO: MULTITHREADING)
         connection_input input = {
             .conn_socket = conn_socket,
             .sock_addr = sock_addr,
         };
         handle_connection((void *)&input);
+        
         served += 1;
         semaphore += 1;
     }
