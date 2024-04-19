@@ -8,8 +8,9 @@ int strcount(char *haystack, char *needle)
 
     if (needle_len)
     {
-        while (current_loc = strstr(current_loc, needle))
+        while (current_loc)
         {
+            current_loc = strstr(current_loc, needle);
             current_loc += needle_len;
             count++;
         }
@@ -23,7 +24,7 @@ int strcount(char *haystack, char *needle)
 
 char *strreplace(char *haystack, char *needle, char *new_needle, int free_old_haystack)
 {
-    if (needle == "")
+    if (strcmp(needle, "") == 0)
         return haystack;
 
     int needle_len_diff = strlen(new_needle) - strlen(needle);
@@ -47,7 +48,7 @@ char *strreplace(char *haystack, char *needle, char *new_needle, int free_old_ha
         repcount++;
         addedchars = repcount * needle_len_diff;
     }
-    strlcpy(&new_haystack[last_replacement_end - haystack + (repcount * needle_len_diff)], last_replacement_end, strlen(haystack) - (last_replacement_end - haystack) + 1);
+    strlcpy(&new_haystack[last_replacement_end - haystack + (repcount * needle_len_diff)], last_replacement_end, strlen(haystack) - (last_replacement_end - haystack));
 
     if (new_haystack[new_haystack_size - 1] != '\0')
         new_haystack[new_haystack_size - 1] = '\0';

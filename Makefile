@@ -1,17 +1,17 @@
 CC=gcc
-CFLAGS=-I.
-LDFLAGS=-lconfuse
+CFLAGS=-I. -O3
+LDFLAGS=-lconfuse -lmagic
 
 IDIR = include
 ODIR = obj
 
 _DEPS = server.h strfunc.h defs.h file.h
-_OBJS = run.o server.o strfunc.o defs.o file.o
+_OBJS = httpd.o server.o strfunc.o defs.o file.o
 
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
-obj/%.o: src/%.c $(DEPS)
+obj/%.o: src/%.c $(DEPS) 
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 server: $(OBJS)

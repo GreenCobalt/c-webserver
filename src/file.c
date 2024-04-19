@@ -9,8 +9,8 @@ file_content read_file(char *path)
         *string = '\0';
 
         file_content r = {
-            content : string,
-            size : 0
+            .content = string,
+            .size = 0
         };
         return r;
     }
@@ -19,14 +19,15 @@ file_content read_file(char *path)
     long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
-    char *string = calloc(fsize + 1, sizeof(char));
-    fread(string, fsize, 1, f);
-    fclose(f);
-    string[fsize] = 0;
-
     file_content r;
-    r.content = string;
-    r.size = fsize + 1;
+    char *string = calloc(fsize + 1, sizeof(char));
+    if (fread(string, fsize, 1, f))
+    {
+        string[fsize] = 0;
 
+        r.content = string;
+        r.size = fsize + 1;
+    }
+    fclose(f);
     return r;
 }

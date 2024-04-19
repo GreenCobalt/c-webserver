@@ -1,5 +1,5 @@
-#ifndef _STRFUNC_H
-#define _STRFUNC_H
+#ifndef STRFUNC_H_
+#define STRFUNC_H_
 
 #include <string.h>
 #include <stdlib.h>
@@ -13,4 +13,4 @@ char *strreplace(char *haystack, char *needle, char *new_needle, int free_old_ha
 // gets rest of haystack after last occurance of needle
 char *strafterlast(const char *haystack, const char *needle);
 
-#endif /* _STRFUNC_H */
+#endif /* STRFUNC_H_ */

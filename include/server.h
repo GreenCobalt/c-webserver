@@ -1,5 +1,5 @@
-#ifndef _SERVER_H
-#define _SERVER_H
+#ifndef SERVER_H_
+#define SERVER_H_
 
 #include <netinet/in.h>
 #include <sys/socket.h>
@@ -24,4 +24,4 @@ typedef struct Server
 
 Server server_constructor(int domain, int type, int protocol, u_long interface, int port, int backlog, void (*run)(Server *server));
 
-#endif /* _SERVER_H */
+#endif /* SERVER_H_ */

@@ -23,17 +23,6 @@ const static struct
 REQUEST_TYPE string_to_request_type(const char *str);
 const char *request_type_to_string(REQUEST_TYPE type);
 
-const static struct
-{
-    const char *file_ext;
-    const char *mime_type;
-} __FILE_MIME_TYPE[] = {
-    {"html", "text/html"},
-    {"jpg", "image/jpeg"},
-};
-
-const char *file_name_to_mime_type(const char *name);
-
 typedef struct
 {
     REQUEST_TYPE request_type;

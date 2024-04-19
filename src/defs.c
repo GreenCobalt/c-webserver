@@ -25,18 +25,6 @@ const char *request_type_to_string(REQUEST_TYPE type)
     return "UNDEFINED";
 }
 
-const char *file_name_to_mime_type(const char *name)
-{
-    for (int i = 0; i < (sizeof(__FILE_MIME_TYPE) / sizeof(__FILE_MIME_TYPE[0])); i++)
-    {
-        if (strcmp(strafterlast(name, "."), __FILE_MIME_TYPE[i].file_ext) == 0)
-        {
-            return __FILE_MIME_TYPE[i].mime_type;
-        }
-    }
-    return "text/plain";
-}
-
 void free_request_info(request_info *info)
 {
     free(info->http_version);
