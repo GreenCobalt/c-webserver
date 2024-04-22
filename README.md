@@ -4,8 +4,8 @@ A simple (non-complete) HTTP server in C
 
 Compiling:
 ```
-git clone https://github.com/GreenCobalt/simple_c_webserver
-cd simple_c_webserver
+git clone https://github.com/GreenCobalt/c-webserver
+cd c-webserver
 make
 ```
 
