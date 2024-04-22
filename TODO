@@ -1,2 +1,1 @@
-add other mime types (png gif etc)
-respond with 500 errors on request cancelled (?)
+multithreading in responses
