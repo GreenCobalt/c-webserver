@@ -11,7 +11,7 @@ _OBJS = httpd.o server.o strfunc.o defs.o file.o
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
 
-obj/%.o: src/%.c $(DEPS) 
+obj/%.o: src/%.c $(DEPS)
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 server: $(OBJS)
@@ -19,4 +19,4 @@ server: $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -f $(ODIR)/*.o server
+	rm -rf $(ODIR)/ server a.out

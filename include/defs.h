@@ -60,4 +60,10 @@ const static struct
 
 const char *http_code_to_message(int code);
 
+typedef struct
+{
+    int conn_socket;
+    struct sockaddr *sock_addr;
+} connection_input;
+
 #endif /* DEFS_H_ */

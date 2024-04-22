@@ -31,12 +31,6 @@ magic_t magic;
 int semaphore = 0;
 int served = 0;
 
-typedef struct
-{
-    int conn_socket;
-    struct sockaddr *sock_addr;
-} connection_input;
-
 char *generate_date_string()
 {
     char *res = calloc(40, sizeof(char));
@@ -51,7 +45,7 @@ response_info generate_response(char *path)
     response_info response = {};
     DEBUG_PRINT("reading file\n");
     response.content = read_file(path);
-    
+
     clock_t start = clock();
     response.content.mime_type = magic_file(magic, path);
     clock_t end = clock();
@@ -61,6 +55,7 @@ response_info generate_response(char *path)
     if (response.content.size == 0)
     {
         free(response.content.content);
+
         response.http_code = 404;
         response.content.mime_type = "text/plain; charset=us-ascii";
         response.content.content = strdup("404 Not Found");
