@@ -127,7 +127,7 @@ void *handle_connection(void *vargp)
 
     char *req = calloc(max_request_content_size, sizeof(char));
 
-    if (read(conn_socket, req, 32768) < 0)
+    if (read(conn_socket, req, max_request_content_size) < 0)
     {
         printf("READ FROM SOCK FAILED\n");
         close(conn_socket);
