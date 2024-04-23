@@ -13,4 +13,4 @@ Running:
 ```
 ./server
 ```
-Will open a socket on all interfaces, port 9000. When entered into a web browser, the server will echo the HTTP version, headers, etc.
+Will open a socket on all interfaces, port 9000 (by default). Serves files in webroot/.
