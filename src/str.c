@@ -1,4 +1,4 @@
-#include "include/strfunc.h"
+#include "include/str.h"
 #include <stdio.h>
 
 int strcount(char *haystack, char *needle)

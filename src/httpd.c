@@ -1,12 +1,13 @@
-#include "include/strfunc.h"
+#include "include/str.h"
 #include "include/server.h"
-#include "include/defs.h"
+#include "include/def.h"
 #include "include/file.h"
+#include "include/http_error.h"
+#include "include/date.h"
 
 #include <confuse.h>
 #include <magic.h>
 
-#include <time.h>
 #include <signal.h>
 #include <stdio.h>
 #include <unistd.h>
@@ -23,50 +24,52 @@ int port;
 int max_request_content_size;
 int max_response_header_size;
 
-const char *DAY[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
-const char *MONTH[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
-
 cfg_t *cfg;
 magic_t magic;
 int semaphore = 0;
 int served = 0;
 
-char *generate_date_string()
+void free_request_info(request_info info)
 {
-    char *res = calloc(40, sizeof(char));
-    time_t t = time(NULL);
-    struct tm tm = *gmtime(&t);
-    snprintf(res, 40, "%s, %02d %s %04d %02d:%02d:%02d %s", DAY[tm.tm_wday], tm.tm_mday, MONTH[tm.tm_mon], tm.tm_year + 1900, tm.tm_hour, tm.tm_min, tm.tm_sec, "GMT");
-    return res;
+    free(info.http_version);
+    free(info.path);
 }
 
-response_info generate_response(char *path)
+void free_response_info(response_info info)
+{
+    free(info.date);
+    if (info.http_code == 200)
+        free(info.content.content);
+}
+
+response_info generate_response(request_info request, char *file_path)
 {
     response_info response = {};
-    DEBUG_PRINT("reading file\n");
-    response.content = read_file(path);
 
-    clock_t start = clock();
-    response.content.mime_type = magic_file(magic, path);
-    clock_t end = clock();
-    double elapsed = (double)(end - start) * 1000.0 / CLOCKS_PER_SEC;
-    DEBUG_PRINT("(magic lookup took %fms)\n", elapsed);
-
-    if (response.content.size == 0)
+    if (request.request_type == UNDEFINED)
     {
-        free(response.content.content);
-
-        response.http_code = 404;
-        response.content.mime_type = "text/plain; charset=us-ascii";
-        response.content.content = strdup("404 Not Found");
-        response.content.size = strlen(response.content.content);
+        DEBUG_PRINT("returning 501\n");
+        response = http_code_to_response(501);
     }
     else
     {
-        response.http_code = 200;
+        if (file_exists(file_path))
+        {
+            DEBUG_PRINT("returning 200, reading file\n");
+            response.content = read_file(file_path, magic);
+
+            response.http_code = 200;
+            response.content_length = response.content.size;
+            if (request.request_type == HEAD)
+                response.content.size = 0;
+        }
+        else
+        {
+            DEBUG_PRINT("returning 404\n");
+            response = http_code_to_response(404);
+        }
     }
 
-    // generate date string for response header
     DEBUG_PRINT("generating date\n");
     response.date = generate_date_string();
 
@@ -167,23 +170,24 @@ void *handle_connection(void *vargp)
 
     printf("%s\t%s\t\t%s\n", ip_str, request_type_to_string(request.request_type), request.path);
 
-    DEBUG_PRINT("generating response html\n");
     char *file_path = calloc(8192, sizeof(char));
     snprintf(file_path, 8192, "%s%s", "webroot", request.path);
-    response_info response = generate_response(file_path);
+    response_info response = generate_response(request, file_path);
     free(file_path);
 
     // generate response http packet
     DEBUG_PRINT("generating response http\n");
     int packet_response_size = max_response_header_size + strlen(response.date) + response.content.size;
+
     char *packet_response = calloc(packet_response_size, sizeof(char));
-    snprintf(packet_response, packet_response_size, "HTTP/1.0 %d %s\r\nServer: snadol 0.1\r\nContent-Length: %ld\r\nContent-Type: %s\r\nDate: %s\r\n\r\n", response.http_code, http_code_to_message(response.http_code), response.content.size, response.content.mime_type, response.date);
+    snprintf(packet_response, packet_response_size, "HTTP/1.0 %d %s\r\nServer: snadol 0.1\r\nContent-Length: %d\r\nContent-Type: %s\r\nDate: %s\r\n\r\n", response.http_code, http_code_to_message(response.http_code), response.content_length, response.content.mime_type, response.date);
 
     // adjust size of packet_response_size to match actual header size instead of max
     packet_response_size = strlen(packet_response) + response.content.size;
 
     // copy response contents to packet_response
-    memcpy(&packet_response[strlen(packet_response)], response.content.content, response.content.size);
+    if (request.request_type != HEAD)
+        memcpy(&packet_response[strlen(packet_response)], response.content.content, response.content.size);
 
     // send html and close socket
     DEBUG_PRINT("sending response\n");
@@ -192,18 +196,20 @@ void *handle_connection(void *vargp)
     double elapsed = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
     printf("%d\t\t%s\t%d\t\t(%fms)\n", response.http_code, response.content.mime_type, packet_response_size, elapsed);
 
+    packet_response[packet_response_size] = 'g';
     if (write(conn_socket, packet_response, packet_response_size) < 0)
     {
         printf("Error while writing\n");
     }
     close(conn_socket);
 
-    DEBUG_PRINT("freeing pointers\n");
     // free memory
     free(packet_response);
     free(request_text);
-    free_request_info(&request);
+    free_request_info(request);
     free_response_info(response);
+
+    DEBUG_PRINT("freed pointers\n");
 
     DEBUG_PRINT("exiting\n");
 
@@ -230,7 +236,7 @@ void run(Server *server)
             .sock_addr = sock_addr,
         };
         handle_connection((void *)&input);
-        
+
         served += 1;
         semaphore += 1;
     }

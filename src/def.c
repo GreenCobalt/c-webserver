@@ -1,5 +1,5 @@
-#include "include/defs.h"
-#include "include/strfunc.h"
+#include "include/def.h"
+#include "include/str.h"
 
 REQUEST_TYPE string_to_request_type(const char *str)
 {
@@ -23,18 +23,6 @@ const char *request_type_to_string(REQUEST_TYPE type)
         }
     }
     return "UNDEFINED";
-}
-
-void free_request_info(request_info *info)
-{
-    free(info->http_version);
-    free(info->path);
-}
-
-void free_response_info(response_info info)
-{
-    free(info.content.content);
-    free(info.date);
 }
 
 const char *http_code_to_message(int code)

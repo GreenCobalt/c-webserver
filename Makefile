@@ -1,12 +1,12 @@
-CC=clang
+CC=gcc
 CFLAGS=-I. -O3
 LDFLAGS=-lconfuse -lmagic
 
 IDIR = include
 ODIR = obj
 
-_DEPS = server.h strfunc.h defs.h file.h
-_OBJS = httpd.o server.o strfunc.o defs.o file.o
+_DEPS = server.h str.h def.h file.h http_error.h date.h
+_OBJS = httpd.o server.o str.o def.o file.o http_error.o date.o
 
 DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
 OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
@@ -19,4 +19,4 @@ server: $(OBJS)
 
 .PHONY: clean
 clean:
-	rm -rf $(ODIR)/ server a.out
+	rm -rf $(ODIR)/*.o server a.out

@@ -1,16 +1,17 @@
 #include "include/file.h"
 
-file_content read_file(char *path)
+int file_exists(char *path)
+{
+    return access(path, F_OK) == 0;
+}
+
+file_content read_file(char *path, magic_t magic)
 {
     FILE *f = fopen(path, "r");
     if (f == NULL)
     {
-        char *string = malloc(sizeof(char));
-        *string = '\0';
-
         file_content r = {
-            .content = string,
-            .size = 0
+            .exists = 0,
         };
         return r;
     }
@@ -20,14 +21,15 @@ file_content read_file(char *path)
     fseek(f, 0, SEEK_SET);
 
     file_content r;
-    char *string = calloc(fsize + 1, sizeof(char));
+    char *string = calloc(fsize, sizeof(char));
     if (fread(string, fsize, 1, f))
     {
-        string[fsize] = 0;
-
         r.content = string;
-        r.size = fsize + 1;
+        r.mime_type = magic_file(magic, path);
+        r.exists = 1;
+        r.size = fsize;
     }
+
     fclose(f);
     return r;
 }
