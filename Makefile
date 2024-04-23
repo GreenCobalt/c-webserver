@@ -1,5 +1,5 @@
 CC=clang
-CFLAGS=-I. -O3
+CFLAGS=-I. -O3 -W -Wall -Werror
 LDFLAGS=-lconfuse -lmagic
 
 IDIR = include

@@ -33,6 +33,8 @@ file_content read_file(char *path, magic_t magic)
         r.mime_type = magic_file(magic, path);
         r.exists = 1;
         r.size = fsize;
+    } else {
+        r.exists = 0;
     }
 
     fclose(f);

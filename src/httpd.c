@@ -32,51 +32,28 @@ magic_t magic;
 int semaphore = 0;
 int served = 0;
 
-void free_request_info(request_info info)
+int read_from_socket(int socket, char *buffer, int max_size)
 {
-    free(info.http_version);
-    free(info.path);
-}
-
-void free_response_info(response_info info)
-{
-    free(info.date);
-    if (info.http_code == 200)
-        free(info.content.content);
-}
-
-response_info generate_response(request_info request, char *file_path)
-{
-    response_info response = {};
-
-    if (request.request_type == UNDEFINED)
+    if (read(socket, buffer, max_size) < 0)
     {
-        DEBUG_PRINT("returning 501\n");
-        response = http_code_to_response(501);
-    }
-    else
-    {
-        if (file_exists(file_path))
-        {
-            DEBUG_PRINT("returning 200, reading file\n");
-            response.content = read_file(file_path, magic);
-
-            response.http_code = 200;
-            response.content_length = response.content.size;
-            if (request.request_type == HEAD)
-                response.content.size = 0;
-        }
-        else
-        {
-            DEBUG_PRINT("returning 404\n");
-            response = http_code_to_response(404);
-        }
+        printf("READ FROM SOCK FAILED\n");
+        return 0;
     }
 
-    DEBUG_PRINT("generating date\n");
-    response.date = generate_date_string();
+    if (!buffer)
+    {
+        printf("REQUEST NULL\n");
+        return 0;
+    }
 
-    return response;
+    return 1;
+}
+
+void get_ip_from_socket(struct sockaddr *sock_addr, char *ip_str)
+{
+    struct sockaddr_in *pV4Addr = (struct sockaddr_in *)sock_addr;
+    struct in_addr ipAddr = pV4Addr->sin_addr;
+    inet_ntop(AF_INET, &ipAddr, ip_str, INET_ADDRSTRLEN);
 }
 
 request_info parse_reqline(char *reqline)
@@ -115,52 +92,90 @@ request_info parse_reqline(char *reqline)
     return result;
 }
 
+response_info generate_response(request_info request, char *file_path)
+{
+    response_info response = {};
+
+    if (request.request_type == UNDEFINED)
+    {
+        DEBUG_PRINT("returning 501\n");
+        response = http_code_to_response(501);
+    }
+    else
+    {
+        if (file_exists(file_path))
+        {
+            DEBUG_PRINT("returning 200, reading file\n");
+            response.content = read_file(file_path, magic);
+
+            response.http_code = 200;
+            response.content_length = response.content.size;
+            if (request.request_type == HEAD)
+                response.content.size = 0;
+        }
+        else
+        {
+            DEBUG_PRINT("returning 404\n");
+            response = http_code_to_response(404);
+        }
+    }
+
+    DEBUG_PRINT("generating date\n");
+    response.date = generate_date_string();
+
+    return response;
+}
+
+void free_request_info(request_info info)
+{
+    free(info.http_version);
+    free(info.path);
+}
+
+void free_response_info(response_info info)
+{
+    free(info.date);
+    if (info.http_code == 200)
+        free(info.content.content);
+}
+
 void *handle_connection(void *vargp)
 {
+    clock_t start = clock();
+
     connection_input input = *((connection_input *)vargp);
     int conn_socket = input.conn_socket;
     struct sockaddr *sock_addr = input.sock_addr;
 
-    clock_t start = clock();
-
     DEBUG_PRINT("reading from socket\n");
-
     char *req = calloc(max_request_content_size, sizeof(char));
-
-    if (read(conn_socket, req, max_request_content_size) < 0)
+    if (!read_from_socket(conn_socket, req, max_request_content_size))
     {
-        printf("READ FROM SOCK FAILED\n");
-        close(conn_socket);
-        semaphore -= 1;
-        return 0;
-    }
-    if (!req)
-    {
-        printf("REQUEST NULL\n");
         close(conn_socket);
         semaphore -= 1;
         return 0;
     }
 
-    // get requesting socket ip
     DEBUG_PRINT("getting client IP\n");
-    struct sockaddr_in *pV4Addr = (struct sockaddr_in *)sock_addr;
-    struct in_addr ipAddr = pV4Addr->sin_addr;
     char ip_str[INET_ADDRSTRLEN];
-    inet_ntop(AF_INET, &ipAddr, ip_str, INET_ADDRSTRLEN);
+    get_ip_from_socket(sock_addr, ip_str);
 
-    // parse http request
     DEBUG_PRINT("parsing http request\n");
-    char *request_text = strreplace(strreplace(req, "\r\n", "\n", 1), "\n\n", "|", 1); /* THIS FREES req */
+    char *request_text = strreplace(strreplace(req, "\r\n", "\n", 0), "\n\n", "|", 1);
+    free(req);
 
     DEBUG_PRINT("splitting http request\n");
-    char *REQLINE = strtok(request_text, "\n"), *HEADERS = strtok(NULL, "|"), *REQBODY = strtok(NULL, "|");
+    char *REQLINE = strtok(request_text, "\n");
+    /*char *HEADERS = */ strtok(NULL, "|");
+    char *REQBODY = strtok(NULL, "|");
+
     if (REQBODY == NULL)
+    {
+        printf("reqbody is null\n");
         REQBODY = "";
+    }
 
-    // parse "GET / HTTP/1.0" line into request_info struct
     DEBUG_PRINT("parsing reqline\n");
-
     request_info request = parse_reqline(REQLINE);
     if (!request.valid)
     {
@@ -245,7 +260,7 @@ void run(Server *server)
     }
 }
 
-void sigintHandle(int dummy)
+void sigintHandle()
 {
     printf("\nCaught CTRL+C\n");
 
@@ -284,7 +299,7 @@ int main()
     // create server struct with port
     Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 255, run);
 
-    // run funciton as defined in struct
+    // run function as defined in struct
     printf("http://127.0.0.1:%d/\n", port);
     server.run(&server);
 }

@@ -17,7 +17,7 @@ const static struct
 
 response_info http_code_to_response(int code)
 {
-    for (int i = 0; i < (sizeof(__HTTP_ERROR_PAGES) / sizeof(__HTTP_ERROR_PAGES[0])); i++)
+    for (unsigned long i = 0; i < (sizeof(__HTTP_ERROR_PAGES) / sizeof(__HTTP_ERROR_PAGES[0])); i++)
     {
         if (code == __HTTP_ERROR_PAGES[i].code)
         {
