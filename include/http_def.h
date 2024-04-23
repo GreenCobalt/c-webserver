@@ -1,5 +1,5 @@
-#ifndef DEFS_H_
-#define DEFS_H_
+#ifndef HTTP_DEF_H_
+#define HTTP_DEF_H_
 
 // file contents
 
@@ -52,4 +52,4 @@ REQUEST_TYPE string_to_request_type(const char *str);
 const char *request_type_to_string(REQUEST_TYPE type);
 const char *http_code_to_message(int code);
 
-#endif /* DEFS_H_ */
+#endif /* HTTP_DEF_H_ */
