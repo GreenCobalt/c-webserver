@@ -1,9 +1,6 @@
 #ifndef STRFUNC_H_
 #define STRFUNC_H_
 
-#include <string.h>
-#include <stdlib.h>
-
 // counts instances of needle in haystack
 int strcount(char *haystack, char *needle);
 

@@ -1,5 +1,9 @@
 #include "include/date.h"
 
+#include <time.h>
+#include <stdio.h>
+#include <stdlib.h>
+
 const char *DAY[7] = {"Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"};
 const char *MONTH[12] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
 

@@ -1,5 +1,10 @@
 #include "include/file.h"
 
+#include <stdio.h>
+#include <string.h>
+#include <stdlib.h>
+#include <unistd.h>
+
 int file_exists(char *path)
 {
     return access(path, F_OK) == 0;

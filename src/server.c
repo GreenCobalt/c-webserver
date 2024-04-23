@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
+#include <sys/socket.h>
 
 // define server_constructor method that returns server_struct. sets variables and sets up server.address. then starts listening on port and address.
 Server server_constructor(int domain, int type, int protocol, u_long interface, int port, int backlog, void (*run)(Server *server))

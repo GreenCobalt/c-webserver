@@ -2,7 +2,6 @@
 #define SERVER_H_
 
 #include <netinet/in.h>
-#include <sys/socket.h>
 
 typedef unsigned long u_long;
 

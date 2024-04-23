@@ -1,9 +1,6 @@
 #ifndef DEFS_H_
 #define DEFS_H_
 
-#include <string.h>
-#include <stdlib.h>
-
 // file contents
 
 typedef struct
@@ -22,25 +19,6 @@ typedef enum
     HEAD,
     UNDEFINED
 } REQUEST_TYPE;
-
-const static struct
-{
-    REQUEST_TYPE request_type;
-    const char *str;
-} __REQUEST_TYPE_STRUCT[] = {
-    {GET, "GET"},
-    {HEAD, "HEAD"},
-};
-
-const static struct
-{
-    const int code;
-    const char *message;
-} __HTTP_CODE_MESSAGES[] = {
-    {200, "OK"},
-    {404, "Not Found"},
-    {501, "Not Implemented"},
-};
 
 // request and response info
 
