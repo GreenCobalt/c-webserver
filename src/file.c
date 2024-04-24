@@ -1,5 +1,6 @@
 #include "include/file.h"
 #include "include/str.h"
+#include "include/mime.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -11,9 +12,9 @@ int file_exists(char *path)
     return access(path, F_OK) == 0;
 }
 
-file_content read_file(char *path, magic_t magic)
+file_content read_file(char *path)
 {
-    FILE *f = fopen(path, "r");
+    FILE *f = fopen(path, "rb");
     if (f == NULL)
     {
         file_content r = {
@@ -23,7 +24,7 @@ file_content read_file(char *path, magic_t magic)
     }
 
     fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
+    long long unsigned int fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
 
     file_content r;
@@ -31,12 +32,13 @@ file_content read_file(char *path, magic_t magic)
     if (fread(string, fsize, 1, f))
     {
         r.content = string;
-        r.mime_type = magic_file(magic, path);
+        r.mime_type = mime_get(strafterlast(path, "."));
         r.exists = 1;
         r.size = fsize;
     }
     else
     {
+        r.size = 0;
         r.exists = 0;
     }
 

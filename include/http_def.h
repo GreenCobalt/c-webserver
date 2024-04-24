@@ -1,15 +1,7 @@
 #ifndef HTTP_DEF_H_
 #define HTTP_DEF_H_
 
-// file contents
-
-typedef struct
-{
-    char *content;
-    const char *mime_type;
-    long size;
-    int exists;
-} file_content;
+#include "include/file.h"
 
 // http request types & response codes
 

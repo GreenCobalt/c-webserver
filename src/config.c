@@ -1,4 +1,5 @@
 #include "include/config.h"
+#include "include/debug.h"
 
 #include <stdlib.h>
 #include <string.h>
@@ -10,7 +11,7 @@ config_file config_open(const char *path)
     res.file = fopen(path, "r");
     if (res.file == NULL)
     {
-        printf("%s: %s not found\n", __FUNCTION__, path);
+        printf("CRITICAL: failed to read %s\n", path);
         exit(1);
     }
 
@@ -24,6 +25,8 @@ void config_close(config_file config)
 
 char *config_read_string(config_file config, char const *key)
 {
+    DEBUG_PRINT("reading %s from config\n", key);
+
     char name[128];
     char val[128];
 
@@ -34,6 +37,8 @@ char *config_read_string(config_file config, char const *key)
             return strdup(val);
         }
     }
+
+    DEBUG_PRINT("%s not found in config, returning null\n", key);
     return NULL;
 }
 

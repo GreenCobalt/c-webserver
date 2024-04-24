@@ -4,7 +4,7 @@
 #include <string.h>
 #include <stdlib.h>
 
-const static struct
+static const struct
 {
     REQUEST_TYPE request_type;
     const char *str;
@@ -13,13 +13,14 @@ const static struct
     {HEAD, "HEAD"},
 };
 
-const static struct
+static const struct
 {
     const int code;
     const char *message;
 } __HTTP_CODE_MESSAGES[] = {
     {200, "OK"},
     {404, "Not Found"},
+    {500, "Internal Server Error"},
     {501, "Not Implemented"},
 };
 

@@ -1,10 +1,15 @@
 #ifndef FILE_H_
 #define FILE_H_
 
-#include "include/http_def.h"
-#include <magic.h>
+typedef struct
+{
+    char *content;
+    const char *mime_type;
+    long long unsigned int size;
+    int exists;
+} file_content;
 
 int file_exists(char *path);
-file_content read_file(char *path, magic_t magic);
+file_content read_file(char *path);
 
 #endif /* FILE_H_ */

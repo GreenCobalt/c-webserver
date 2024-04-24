@@ -42,7 +42,7 @@ char *strreplace(char *haystack, char *needle, char *new_needle, int free_old_ha
     int addedchars = 0;
     while (last_strstr)
     {
-        strncpy(&new_haystack[(last_strstr - haystack) + addedchars], new_needle, strlen(new_needle));
+        strcpy(&new_haystack[(last_strstr - haystack) + addedchars], new_needle);//, strlen(new_needle));
         strncpy(&new_haystack[last_replacement_end - haystack + addedchars], last_replacement_end, last_strstr - last_replacement_end);
 
         last_replacement_end = last_strstr + strlen(needle);
@@ -51,7 +51,7 @@ char *strreplace(char *haystack, char *needle, char *new_needle, int free_old_ha
         repcount++;
         addedchars = repcount * needle_len_diff;
     }
-    strlcpy(&new_haystack[last_replacement_end - haystack + (repcount * needle_len_diff)], last_replacement_end, strlen(haystack) - (last_replacement_end - haystack));
+    strncpy(&new_haystack[last_replacement_end - haystack + (repcount * needle_len_diff)], last_replacement_end, strlen(haystack) - (last_replacement_end - haystack));
 
     if (new_haystack[new_haystack_size - 1] != '\0')
         new_haystack[new_haystack_size - 1] = '\0';

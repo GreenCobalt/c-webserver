@@ -1,8 +1,10 @@
 #include "include/config.h"
 #include "include/date.h"
+#include "include/debug.h"
 #include "include/file.h"
 #include "include/http_def.h"
 #include "include/http_error.h"
+#include "include/mime.h"
 #include "include/server.h"
 #include "include/str.h"
 
@@ -13,15 +15,12 @@
 #include <signal.h>
 #include <unistd.h>
 #include <time.h>
+
+#ifdef _WIN32
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#elif __linux__
 #include <arpa/inet.h>
-
-#include <magic.h>
-
-#define DEBUG 0
-#if defined(DEBUG) && DEBUG > 0
-#define DEBUG_PRINT(fmt, args...) fprintf(stderr, "DEBUG: %s:%03d:%s(): " fmt, __FILE__, __LINE__, __func__, ##args)
-#else
-#define DEBUG_PRINT(fmt, args...) /* Don't do anything in release builds */
 #endif
 
 int port;
@@ -29,11 +28,10 @@ int max_request_content_size;
 int max_response_header_size;
 
 config_file cfg;
-magic_t magic;
 
 int read_from_socket(int socket, char *buffer, int max_size)
 {
-    if (read(socket, buffer, max_size) < 0)
+    if (recv(socket, buffer, max_size, 0) < 0)
     {
         printf("READ FROM SOCK FAILED\n");
         return 0;
@@ -68,7 +66,7 @@ request_info parse_reqline(char *reqline)
 
     char *edit = calloc(strlen(reqline) + 1, sizeof(char));
     DEBUG_PRINT("%p\n", edit);
-    strncpy(edit, reqline, strlen(reqline));
+    strcpy(edit, reqline); //, strlen(reqline));
 
     request_info result;
     result.valid = 1;
@@ -105,7 +103,7 @@ response_info generate_response(request_info request, char *file_path)
         if (file_exists(file_path))
         {
             DEBUG_PRINT("returning 200, reading file\n");
-            response.content = read_file(file_path, magic);
+            response.content = read_file(file_path);
 
             response.http_code = 200;
             response.content_length = response.content.size;
@@ -189,15 +187,28 @@ void *handle_connection(void *vargp)
 
     // generate response http packet
     DEBUG_PRINT("generating response http\n");
-    int packet_response_size = max_response_header_size + strlen(response.date) + response.content.size;
+    long long unsigned int packet_response_size = max_response_header_size + strlen(response.date) + response.content.size;
+    DEBUG_PRINT("sizes %d %llu %llu total %llu\n", max_response_header_size, strlen(response.date), response.content.size, packet_response_size);
 
     char *packet_response = calloc(packet_response_size, sizeof(char));
+    if (!packet_response)
+    {
+        printf("could not alloc ram for packet response, size %llu (%p)\n", packet_response_size, packet_response);
+        close(conn_socket);
+        free(request_text);
+        free_request_info(request);
+        free_response_info(response);
+        return 0;
+    }
+
     snprintf(packet_response, packet_response_size, "HTTP/1.0 %d %s\r\nServer: snadol 0.1\r\nContent-Length: %d\r\nContent-Type: %s\r\nDate: %s\r\n\r\n", response.http_code, http_code_to_message(response.http_code), response.content_length, response.content.mime_type, response.date);
 
     // adjust size of packet_response_size to match actual header size instead of max
+    DEBUG_PRINT("adjusting packet size\n");
     packet_response_size = strlen(packet_response) + response.content.size;
 
     // copy response contents to packet_response
+    DEBUG_PRINT("copying response content to packet\n");
     if (request.request_type != HEAD)
         memcpy(&packet_response[strlen(packet_response)], response.content.content, response.content.size);
 
@@ -206,14 +217,19 @@ void *handle_connection(void *vargp)
 
     clock_t stop = clock();
     double elapsed = (double)(stop - start) * 1000.0 / CLOCKS_PER_SEC;
-    printf("%d\t\t%s\t%d\t\t(%fms)\n", response.http_code, response.content.mime_type, packet_response_size, elapsed);
+    printf("%d\t\t%s\t%llu\t\t(%fms)\n", response.http_code, response.content.mime_type, packet_response_size, elapsed);
 
-    packet_response[packet_response_size] = 'g';
-    if (write(conn_socket, packet_response, packet_response_size) < 0)
+    if (send(conn_socket, packet_response, packet_response_size, 0) < 0)
     {
         printf("Error while writing\n");
     }
+
+    DEBUG_PRINT("closing socket\n");
+#ifdef _WIN32
+    closesocket(conn_socket);
+#else
     close(conn_socket);
+#endif
 
     // free memory
     DEBUG_PRINT("freeing pointers\n");
@@ -254,7 +270,7 @@ void sigintHandle()
 
     // free remaining pointers
     config_close(cfg);
-    magic_close(magic);
+    mime_close();
 
     printf("Exiting\n");
     exit(0);
@@ -264,25 +280,23 @@ int main()
 {
     signal(SIGINT, sigintHandle);
 
-    DEBUG_PRINT("initialize magic library\n");
-    magic = magic_open(MAGIC_MIME);
-
     DEBUG_PRINT("open config file\n");
     cfg = config_open("server.conf");
-
-    // load magic data
-    DEBUG_PRINT("load magic data\n");
-    magic_load(magic, NULL);
 
     DEBUG_PRINT("load config values\n");
     port = config_read_int(cfg, "port");
     max_request_content_size = config_read_int(cfg, "max_request_content_size");
     max_response_header_size = config_read_int(cfg, "max_response_header_size");
 
-    DEBUG_PRINT("checking valid config values\n");
+    DEBUG_PRINT("checking valid config int values\n");
     assert(port < __INT_MAX__);
     assert(max_request_content_size < __INT_MAX__);
     assert(max_response_header_size < __INT_MAX__);
+
+    DEBUG_PRINT("initialize mime\n");
+    char *mime_loc = config_read_string(cfg, "mime_types_location");
+    mime_init(mime_loc ? mime_loc : "mime.types");
+    free(mime_loc);
 
     // create server struct with port
     DEBUG_PRINT("initialize server\n");
