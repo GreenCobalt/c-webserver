@@ -1,3 +1,4 @@
+#include "include/config.h"
 #include "include/date.h"
 #include "include/file.h"
 #include "include/http_def.h"
@@ -5,6 +6,7 @@
 #include "include/server.h"
 #include "include/str.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -13,7 +15,6 @@
 #include <time.h>
 #include <arpa/inet.h>
 
-#include <confuse.h>
 #include <magic.h>
 
 #define DEBUG 0
@@ -27,10 +28,8 @@ int port;
 int max_request_content_size;
 int max_response_header_size;
 
-cfg_t *cfg;
+config_file cfg;
 magic_t magic;
-int semaphore = 0;
-int served = 0;
 
 int read_from_socket(int socket, char *buffer, int max_size)
 {
@@ -152,7 +151,6 @@ void *handle_connection(void *vargp)
     if (!read_from_socket(conn_socket, req, max_request_content_size))
     {
         close(conn_socket);
-        semaphore -= 1;
         return 0;
     }
 
@@ -170,10 +168,7 @@ void *handle_connection(void *vargp)
     char *REQBODY = strtok(NULL, "|");
 
     if (REQBODY == NULL)
-    {
-        printf("reqbody is null\n");
         REQBODY = "";
-    }
 
     DEBUG_PRINT("parsing reqline\n");
     request_info request = parse_reqline(REQLINE);
@@ -182,7 +177,6 @@ void *handle_connection(void *vargp)
         printf("REQUEST CANCELLED\n");
         close(conn_socket);
         free(request_text);
-        semaphore -= 1;
         return 0;
     }
 
@@ -222,16 +216,13 @@ void *handle_connection(void *vargp)
     close(conn_socket);
 
     // free memory
+    DEBUG_PRINT("freeing pointers\n");
     free(packet_response);
     free(request_text);
     free_request_info(request);
     free_response_info(response);
 
-    DEBUG_PRINT("freed pointers\n");
-
     DEBUG_PRINT("exiting\n");
-
-    semaphore -= 1;
     return 0;
 }
 
@@ -254,9 +245,6 @@ void run(Server *server)
             .sock_addr = sock_addr,
         };
         handle_connection((void *)&input);
-
-        served += 1;
-        semaphore += 1;
     }
 }
 
@@ -265,10 +253,10 @@ void sigintHandle()
     printf("\nCaught CTRL+C\n");
 
     // free remaining pointers
-    cfg_free(cfg);
+    config_close(cfg);
     magic_close(magic);
 
-    printf("Exiting, served %d requests total\n", served);
+    printf("Exiting\n");
     exit(0);
 }
 
@@ -276,27 +264,28 @@ int main()
 {
     signal(SIGINT, sigintHandle);
 
-    // initialize config and magic libraries
-    cfg_opt_t opts[] =
-        {
-            CFG_INT("port", 9000, CFGF_NONE),
-            CFG_INT("max_request_content_size", 32768, CFGF_NONE),
-            CFG_INT("max_response_header_size", 512, CFGF_NONE),
-            CFG_END(),
-        };
-    cfg = cfg_init(opts, CFGF_NONE);
+    DEBUG_PRINT("initialize magic library\n");
     magic = magic_open(MAGIC_MIME);
 
-    // load config and magic data
-    if (cfg_parse(cfg, "server.conf") == CFG_PARSE_ERROR)
-        return 1;
+    DEBUG_PRINT("open config file\n");
+    cfg = config_open("server.conf");
+
+    // load magic data
+    DEBUG_PRINT("load magic data\n");
     magic_load(magic, NULL);
 
-    port = cfg_getint(cfg, "port");
-    max_request_content_size = cfg_getint(cfg, "max_request_content_size");
-    max_response_header_size = cfg_getint(cfg, "max_response_header_size");
+    DEBUG_PRINT("load config values\n");
+    port = config_read_int(cfg, "port");
+    max_request_content_size = config_read_int(cfg, "max_request_content_size");
+    max_response_header_size = config_read_int(cfg, "max_response_header_size");
+
+    DEBUG_PRINT("checking valid config values\n");
+    assert(port < __INT_MAX__);
+    assert(max_request_content_size < __INT_MAX__);
+    assert(max_response_header_size < __INT_MAX__);
 
     // create server struct with port
+    DEBUG_PRINT("initialize server\n");
     Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 255, run);
 
     // run function as defined in struct

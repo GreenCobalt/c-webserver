@@ -1,4 +1,5 @@
 #include "include/file.h"
+#include "include/str.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -33,7 +34,9 @@ file_content read_file(char *path, magic_t magic)
         r.mime_type = magic_file(magic, path);
         r.exists = 1;
         r.size = fsize;
-    } else {
+    }
+    else
+    {
         r.exists = 0;
     }
 
