@@ -2,17 +2,16 @@
 # linux 	= x86_64-linux-gnu-gcc
 # windows 	= x86_64-w64-mingw32-gcc
 
-CFLAGS=-I. -O3 -W -Wall -Werror
-LDFLAGS=-static
+CC := clang
+CFLAGS = -I. -O3 -W -Wall -Werror
+LDFLAGS = -static
 
 IDIR = include
 ODIR = obj
+SDIR = src
 
-_DEPS = server.h str.h http_def.h file.h http_error.h date.h config.h mime.h debug.h
-_OBJS = main.o server.o str.o http_def.o file.o http_error.o date.o config.o mime.o
-
-DEPS = $(patsubst %,$(IDIR)/%,$(_DEPS))
-OBJS = $(patsubst %,$(ODIR)/%,$(_OBJS))
+DEPS = $(shell find $(IDIR) -name '*.h')
+OBJS = $(shell find $(SDIR) -name '*.c' | sed 's/\.c/\.o/g' | sed 's/src/obj/g')
 
 ifeq ($(CC), x86_64-w64-mingw32-gcc)
 	LDFLAGS += -lws2_32
@@ -25,10 +24,10 @@ server: $(OBJS)
 	$(CC) -o server $(OBJS) -I. $(LDFLAGS)
 
 linux:
-	CC=x86_64-linux-gnu-gcc make server
+	make server CC=x86_64-linux-gnu-gcc
 
 windows:
-	CC=x86_64-w64-mingw32-gcc make server
+	make server CC=x86_64-w64-mingw32-gcc
 
 .PHONY: clean
 clean:

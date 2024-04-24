@@ -26,6 +26,12 @@ typedef struct Server
     void (*run)(struct Server *server);
 } Server;
 
+typedef struct
+{
+    int conn_socket;
+    struct sockaddr *sock_addr;
+} connection_input;
+
 Server server_constructor(int domain, int type, int protocol, u_long iface, int port, int backlog, void (*run)(Server *server));
 
 #endif /* SERVER_H_ */

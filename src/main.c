@@ -23,6 +23,9 @@
 #include <arpa/inet.h>
 #endif
 
+#define MAX_FILE_PATH_LEN 8192
+#define MAX_REQUEST_BACKLOG 255
+
 int port;
 int max_request_content_size;
 int max_response_header_size;
@@ -148,8 +151,7 @@ void *handle_connection(void *vargp)
     char *req = calloc(max_request_content_size, sizeof(char));
     if (!read_from_socket(conn_socket, req, max_request_content_size))
     {
-        close(conn_socket);
-        return 0;
+        goto exit_socket;
     }
 
     DEBUG_PRINT("getting client IP\n");
@@ -173,38 +175,32 @@ void *handle_connection(void *vargp)
     if (!request.valid)
     {
         printf("REQUEST CANCELLED\n");
-        close(conn_socket);
-        free(request_text);
-        return 0;
+        goto exit_reqtext;
     }
 
     printf("%s\t%s\t\t%s\n", ip_str, request_type_to_string(request.request_type), request.path);
 
-    char *file_path = calloc(8192, sizeof(char));
-    snprintf(file_path, 8192, "%s%s", "webroot", request.path);
+    char *file_path = calloc(MAX_FILE_PATH_LEN, sizeof(char));
+    snprintf(file_path, MAX_FILE_PATH_LEN, "%s%s", "webroot", request.path);
     response_info response = generate_response(request, file_path);
     free(file_path);
 
     // generate response http packet
     DEBUG_PRINT("generating response http\n");
     long long unsigned int packet_response_size = max_response_header_size + strlen(response.date) + response.content.size;
-    DEBUG_PRINT("sizes %d %llu %llu total %llu\n", max_response_header_size, strlen(response.date), response.content.size, packet_response_size);
+    DEBUG_PRINT("sizes %d %llu %llu total %llu\n", max_response_header_size, (unsigned long long)strlen(response.date), response.content.size, packet_response_size);
 
     char *packet_response = calloc(packet_response_size, sizeof(char));
     if (!packet_response)
     {
         printf("could not alloc ram for packet response, size %llu (%p)\n", packet_response_size, packet_response);
-        close(conn_socket);
-        free(request_text);
-        free_request_info(request);
-        free_response_info(response);
-        return 0;
+        goto exit_response;
     }
 
     snprintf(packet_response, packet_response_size, "HTTP/1.0 %d %s\r\nServer: snadol 0.1\r\nContent-Length: %d\r\nContent-Type: %s\r\nDate: %s\r\n\r\n", response.http_code, http_code_to_message(response.http_code), response.content_length, response.content.mime_type, response.date);
 
     // adjust size of packet_response_size to match actual header size instead of max
-    DEBUG_PRINT("adjusting packet size\n");
+    DEBUG_PRINT("adjusting packet size from %llu to %llu\n", packet_response_size, strlen(packet_response) + response.content.size);
     packet_response_size = strlen(packet_response) + response.content.size;
 
     // copy response contents to packet_response
@@ -221,22 +217,25 @@ void *handle_connection(void *vargp)
 
     if (send(conn_socket, packet_response, packet_response_size, 0) < 0)
     {
-        printf("Error while writing\n");
+        printf("error while writing\n");
     }
 
+    // free memory
+    DEBUG_PRINT("freeing pointers\n");
+    free(packet_response);
+exit_response:
+    free_response_info(response);
+    free_request_info(request);
+exit_reqtext:
+    free(request_text);
+
+exit_socket:
     DEBUG_PRINT("closing socket\n");
 #ifdef _WIN32
     closesocket(conn_socket);
 #else
     close(conn_socket);
 #endif
-
-    // free memory
-    DEBUG_PRINT("freeing pointers\n");
-    free(packet_response);
-    free(request_text);
-    free_request_info(request);
-    free_response_info(response);
 
     DEBUG_PRINT("exiting\n");
     return 0;
@@ -280,6 +279,13 @@ int main()
 {
     signal(SIGINT, sigintHandle);
 
+    DEBUG_PRINT("webserver 0.1 running on ");
+#ifdef _WIN32
+    DEBUG_PRINT_NOINFO("windows\n");
+#else
+    DEBUG_PRINT_NOINFO("linux\n");
+#endif
+
     DEBUG_PRINT("open config file\n");
     cfg = config_open("server.conf");
 
@@ -300,7 +306,7 @@ int main()
 
     // create server struct with port
     DEBUG_PRINT("initialize server\n");
-    Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, 255, run);
+    Server server = server_constructor(AF_INET, SOCK_STREAM, 0, INADDR_ANY, port, MAX_REQUEST_BACKLOG, run);
 
     // run function as defined in struct
     printf("http://127.0.0.1:%d/\n", port);

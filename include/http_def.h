@@ -3,7 +3,7 @@
 
 #include "include/file.h"
 
-// http request types & response codes
+// http request types
 
 typedef enum
 {
@@ -29,14 +29,6 @@ typedef struct
     char *http_version;
     int valid;
 } request_info;
-
-// other
-
-typedef struct
-{
-    int conn_socket;
-    struct sockaddr *sock_addr;
-} connection_input;
 
 // FUNCTIONS
 
