@@ -136,6 +136,9 @@ void mime_close()
 
 const char *mime_get(const char *ext)
 {
+	if (!ext)
+		goto ret;
+		
 	for (struct s_mimetype *m = mimes; m; m = m->next)
 	{
 		for (int x = 0; x < m->extensioncount; x++)
@@ -146,6 +149,7 @@ const char *mime_get(const char *ext)
 			}
 		}
 	}
+ret:
 	return "application/octet-stream";
 }
 

@@ -70,25 +70,27 @@ request_info parse_reqline(char *reqline)
 	char *edit = calloc(strlen(reqline) + 1, sizeof(char));
 	strcpy(edit, reqline); //, strlen(reqline));
 
-	request_info result;
-	result.valid = 1;
+	request_info request;
+	request.valid = 1;
 
-	result.request_type = string_to_request_type(strtok(edit, " "));
+	request.request_type = string_to_request_type(strtok(edit, " "));
 
 	char *path = strtok(NULL, " ");
 	char *http_version = strtok(NULL, " ");
 
-	result.path = strdup(path);
-	result.http_version = strdup(http_version);
+	request.path = strbeforefirst(path, "?");
+	request.query = strafterfirst(path, "?");
 
-	if (strcmp(result.path, "/") == 0)
+	request.http_version = strdup(http_version);
+
+	if (!request.path || strcmp(request.path, "/") == 0)
 	{
-		free(result.path);
-		result.path = strdup("/index.html");
+		free(request.path);
+		request.path = strdup("/index.html");
 	}
 
 	free(edit);
-	return result;
+	return request;
 }
 
 response_info generate_response(request_info request, char *file_path)
@@ -129,6 +131,7 @@ void free_request_info(request_info info)
 {
 	free(info.http_version);
 	free(info.path);
+	free(info.query);
 }
 
 void free_response_info(response_info info)
@@ -177,7 +180,7 @@ void *handle_connection(void *vargp)
 		goto exit_reqtext;
 	}
 
-	printf("%s\t%s\t\t%s\n", ip_str, request_type_to_string(request.request_type), request.path);
+	printf("%s\t%s\t\t%s\t\t%s\n", ip_str, request_type_to_string(request.request_type), request.path, request.query);
 
 	char *file_path = calloc(MAX_FILE_PATH_LEN, sizeof(char));
 	snprintf(file_path, MAX_FILE_PATH_LEN, "%s%s", "webroot", request.path);

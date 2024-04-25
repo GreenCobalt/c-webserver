@@ -29,6 +29,9 @@ linux:
 windows:
 	make server CC=x86_64-w64-mingw32-gcc
 
+test:
+	make && valgrind --leak-check=full ./server
+
 .PHONY: clean
 clean:
 	rm -rf $(ODIR)/*.o server server.exe a.out

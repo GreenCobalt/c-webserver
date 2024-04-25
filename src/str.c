@@ -62,13 +62,53 @@ char *strreplace(char *haystack, char *needle, char *new_needle, int free_old_ha
 	return new_haystack;
 }
 
+char *strbeforefirst(const char *haystack, const char *needle)
+{
+	char *ret = strdup(haystack);
+	char *ptr = strchr(ret, *needle);
+	if (ptr == NULL)
+		return ret;
+
+	*ptr = '\0';
+	return ret;
+}
+
+char *strafterfirst(const char *haystack, const char *needle)
+{
+	char *ptr = strchr(haystack, *needle);
+	if (ptr == NULL)
+		return ptr;
+
+	return strdup(ptr + 1);
+}
+
+char *strbeforelast(const char *haystack, const char *needle)
+{
+	char *ret = strdup(haystack);
+	char *ptr = strrchr(ret, *needle);
+	if (ptr == NULL)
+		return ret;
+
+	*ptr = '\0';
+	return ret;
+}
+
 char *strafterlast(const char *haystack, const char *needle)
 {
 	char *ptr = strrchr(haystack, *needle);
 	if (ptr == NULL)
-	{
-		free(ptr);
-		return strdup("");
-	}
-	return ptr + 1;
+		return ptr;
+
+	return strdup(ptr + 1);
 }
+
+/*
+char *strdup(const char *src)
+{
+	char *dst = malloc(strlen(src) + 1);
+	if (dst == NULL)
+		return NULL;
+	strcpy(dst, src);
+	return dst;
+}
+*/

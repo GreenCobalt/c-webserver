@@ -1,5 +1,6 @@
 #include "include/config.h"
 #include "include/debug.h"
+#include "include/str.h"
 
 #include <stdlib.h>
 #include <string.h>

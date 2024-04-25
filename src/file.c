@@ -29,10 +29,12 @@ file_content read_file(char *path)
 
 	file_content r;
 	char *string = calloc(fsize, sizeof(char));
+	char *ext = strafterlast(path, ".");
+
 	if (fread(string, fsize, 1, f))
 	{
 		r.content = string;
-		r.mime_type = mime_get(strafterlast(path, "."));
+		r.mime_type = ext ? mime_get(ext) : "application/octet-stream";
 		r.exists = 1;
 		r.size = fsize;
 	}
@@ -41,6 +43,7 @@ file_content read_file(char *path)
 		r.size = 0;
 		r.exists = 0;
 	}
+	free(ext);
 
 	fclose(f);
 	return r;

@@ -28,6 +28,7 @@ typedef struct
 	char *path;
 	char *http_version;
 	int valid;
+	char *query;
 } request_info;
 
 // FUNCTIONS
