@@ -5,8 +5,8 @@
 
 typedef struct
 {
-    FILE *file;
-    const char *path;
+	FILE *file;
+	const char *path;
 } config_file;
 
 config_file config_open(const char *path);

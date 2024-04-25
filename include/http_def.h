@@ -7,27 +7,27 @@
 
 typedef enum
 {
-    GET,
-    HEAD,
-    UNDEFINED
+	GET,
+	HEAD,
+	UNDEFINED
 } REQUEST_TYPE;
 
 // request and response info
 
 typedef struct
 {
-    int http_code;
-    file_content content;
-    int content_length;
-    char *date;
+	int http_code;
+	file_content content;
+	int content_length;
+	char *date;
 } response_info;
 
 typedef struct
 {
-    REQUEST_TYPE request_type;
-    char *path;
-    char *http_version;
-    int valid;
+	REQUEST_TYPE request_type;
+	char *path;
+	char *http_version;
+	int valid;
 } request_info;
 
 // FUNCTIONS

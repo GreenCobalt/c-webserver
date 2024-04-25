@@ -7,11 +7,11 @@
 
 struct s_mimetype
 {
-    char mimetype[64];
-    int extensioncount;
-    char *extensions[MIMETYPE_EXT_MAX_COUNT];
+	char mimetype[64];
+	int extensioncount;
+	char *extensions[MIMETYPE_EXT_MAX_COUNT];
 
-    struct s_mimetype *next;
+	struct s_mimetype *next;
 };
 
 void mime_init(const char *filepath);

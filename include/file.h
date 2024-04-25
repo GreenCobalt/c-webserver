@@ -3,10 +3,10 @@
 
 typedef struct
 {
-    char *content;
-    const char *mime_type;
-    long long unsigned int size;
-    int exists;
+	char *content;
+	const char *mime_type;
+	long long unsigned int size;
+	int exists;
 } file_content;
 
 int file_exists(char *path);
