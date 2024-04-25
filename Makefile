@@ -4,7 +4,7 @@
 
 CC := clang
 CFLAGS = -I. -O3 -W -Wall -Werror
-LDFLAGS = -static
+LDFLAGS = 
 
 IDIR = include
 ODIR = obj

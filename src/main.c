@@ -68,7 +68,6 @@ request_info parse_reqline(char *reqline)
     DEBUG_PRINT("%s\n", reqline);
 
     char *edit = calloc(strlen(reqline) + 1, sizeof(char));
-    DEBUG_PRINT("%p\n", edit);
     strcpy(edit, reqline); //, strlen(reqline));
 
     request_info result;
@@ -279,7 +278,7 @@ int main()
 {
     signal(SIGINT, sigintHandle);
 
-    DEBUG_PRINT("webserver 0.1 running on ");
+    DEBUG_PRINT("webserver 0.1 compiled for ");
 #ifdef _WIN32
     DEBUG_PRINT_NOINFO("windows\n");
 #else
